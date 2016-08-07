@@ -1,0 +1,39 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<title>Product Description</title>
+<link rel="stylesheet" href={{url_for('static', filename='css/productDescription.css')}}></link>
+</head>
+<body>
+<div id="productName">
+	<h1>{{data[1]}}</h1>
+</div>
+<div>
+	<img src={{url_for('static', filename='uploads/'+data[4]) }} id="productImage"/>
+</div>
+
+<div id="productDescription">
+	<h2>Details</h2>
+	<table id="descriptionTable">
+		<tr>
+			<td>Name</td>
+			<td>{{data[1]}}</td>
+		</tr>
+		<tr>
+			<td>Price</td>
+			<td>${{data[2]}}</td>
+		</tr>
+		<tr>
+			<td>Stock</td>
+			<td>{{data[5]}}</td>
+		</tr>
+	</table>
+	<h2>Description</h2>
+	<p>{{data[3]}}</p>
+</div>
+<div id="addToCart">
+	<a href="/addToCart?productId={{request.args.get('productId')}}">Add to Cart</a>
+</div>
+</body>
+</html>
+

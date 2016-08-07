@@ -1,0 +1,35 @@
+#productImage {
+	height: 250px;
+	width: 200px;
+	margin-left: 20px;
+	margin-right: 20px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	display: inline-block;
+	float: left;
+}
+
+#productDescription {
+	margin-left: 20px;
+	margin-right: 20px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	display: inline-block;
+}
+
+#descriptionTable {
+	border: 1px solid black;
+	font-size: 20px;
+}
+
+#descriptionTable td {
+	border: 1px solid black;
+}
+
+#addToCart {
+	font-size: 20px;
+}
+
+
+
+

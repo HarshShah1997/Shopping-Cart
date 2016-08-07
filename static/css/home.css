@@ -1,0 +1,91 @@
+#logo {
+	height: 40px;
+	width: 50px;
+	margin-left: 20px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+	margin-right: 20px;
+	float: left;
+}
+
+#title {
+	background-color: black;
+	display: inline-block;
+	width: 100%;
+}
+
+#searchBox {
+	height: 20px;
+	width: 800px;
+	margin-left: 20px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	margin-right: 20px;
+	float: left;
+	font-size: 1.5em;
+}
+
+#searchButton {
+	height: 25px;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	margin-right: 20px;
+	float: left;
+}
+
+#displayUserId {
+	color: white;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	margin-left: 20px;
+	margin-right: 20px;
+	float: left;
+}
+
+#signInButton {
+	color: yellow;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	margin-left: 20px;
+	margin-right: 20px;
+	float: left;
+}
+
+#itemImage {
+	height: 200px;
+	width: 150px;
+}
+
+#display {
+	margin-top: 20px;
+	margin-left: 20px;
+	margin-right: 20px;
+	margin-bottom: 20px;
+}
+
+table {
+	border-spacing: 20px;
+}
+
+#productName {
+	text-align: center;
+	font-weight: bold;
+}
+
+#productPrice {
+	text-align: center;
+}
+
+#kart {
+	color: white;
+	margin-top: 20px;
+	margin-bottom: 20px;
+	margin-left: 20px;
+	margin-right: 20px;
+	float: left;
+}
+
+#cartIcon {
+	height: 30px;
+	width: 30px;
+}
