@@ -8,13 +8,9 @@ UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-@app.route("/")
-def root():
-	with sqlite3.connect('database.db') as con:
-		cur = con.cursor()
-		cur.execute('SELECT productId, name, price, description, image, stock FROM products')
-		data = cur.fetchall()
-
+def getLoginDetails():
+	with sqlite3.connect('database.db') as conn:
+		cur = conn.cursor()
 		if 'email' not in session:
 			loggedIn = False
 			firstName = ''
@@ -22,18 +18,30 @@ def root():
 		else:
 			loggedIn = True
 			cur.execute("SELECT userId, firstName FROM users WHERE email = '" + session['email'] + "'")
-			
 			userId, firstName = cur.fetchone()
-
 			cur.execute("SELECT count(productId) FROM kart WHERE userId = " + str(userId))
 			noOfItems = cur.fetchone()[0]
-			print(noOfItems)
+	conn.close()
+	return (loggedIn, firstName, noOfItems)
+
+@app.route("/")
+def root():
+	loggedIn, firstName, noOfItems = getLoginDetails()
+	with sqlite3.connect('database.db') as conn:
+		cur = conn.cursor()
+		cur.execute('SELECT productId, name, price, description, image, stock FROM products')
+		itemData = cur.fetchall()
 			
-	return render_template('home.html', data=data, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
+	return render_template('home.html', data=itemData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
 
 @app.route("/add")
 def admin():
-	return render_template('add.html')
+	with sqlite3.connect('database.db') as conn:
+		cur = conn.cursor()
+		cur.execute("SELECT categoryId, name FROM categories")
+		categories = cur.fetchall()
+	conn.close()
+	return render_template('add.html', categories=categories)
 
 @app.route("/addItem", methods=["GET", "POST"])
 def addItem():
@@ -42,6 +50,7 @@ def addItem():
 		price = float(request.form['price'])
 		description = request.form['description']
 		stock = int(request.form['stock'])
+
 		#Uploading image procedure
 		image = request.files['image']
 		if image and allowed_file(image.filename):
@@ -58,7 +67,8 @@ def addItem():
 				msg="error occured"
 				conn.rollback()
 		conn.close()
-		return msg
+		print(msg)
+		return redirect(url_for('root'))
 
 @app.route("/remove")
 def remove():
@@ -82,7 +92,8 @@ def removeItem():
 			conn.rollback()
 			msg = "Error occured"
 	conn.close()
-	return msg
+	print(msg)
+	return redirect(url_for('root'))
 			
 @app.route("/loginForm")
 def loginForm():
@@ -105,13 +116,14 @@ def login():
 
 @app.route("/productDescription")
 def productDescription():
+	loggedIn, firstName, noOfItems = getLoginDetails()
 	productId = request.args.get('productId')
 	with sqlite3.connect('database.db') as conn:
 		cur = conn.cursor()
 		cur.execute('SELECT productId, name, price, description, image, stock FROM products WHERE productId = ' + productId)
-		data = cur.fetchone()
+		productData = cur.fetchone()
 	conn.close()
-	return render_template("productDescription.html", data=data)
+	return render_template("productDescription.html", data=productData, loggedIn = loggedIn, firstName = firstName, noOfItems = noOfItems)
 
 @app.route("/addToCart")
 def addToCart():
@@ -137,6 +149,7 @@ def addToCart():
 def cart():
 	if 'email' not in session:
 		return redirect(url_for('loginForm'))
+	loggedIn, firstName, noOfItems = getLoginDetails()
 	email = session['email']
 	with sqlite3.connect('database.db') as conn:
 		cur = conn.cursor()
@@ -147,7 +160,7 @@ def cart():
 	totalPrice = 0
 	for row in products:
 		totalPrice += row[2]
-	return render_template("cart.html", products = products, totalPrice=totalPrice)
+	return render_template("cart.html", products = products, totalPrice=totalPrice, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
 
 @app.route("/removeFromCart")
 def removeFromCart():

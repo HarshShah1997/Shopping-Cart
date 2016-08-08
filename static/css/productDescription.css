@@ -1,3 +1,10 @@
+#display {
+	margin-top: 20px;
+	margin-left: 20px;
+	margin-right: 20px;
+	margin-bottom: 20px;
+}
+
 #productImage {
 	height: 250px;
 	width: 200px;
@@ -29,7 +36,4 @@
 #addToCart {
 	font-size: 20px;
 }
-
-
-
 
