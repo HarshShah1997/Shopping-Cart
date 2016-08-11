@@ -31,8 +31,10 @@ def root():
 		cur = conn.cursor()
 		cur.execute('SELECT productId, name, price, description, image, stock FROM products')
 		itemData = cur.fetchall()
+		cur.execute('SELECT categoryId, name FROM categories')
+		categoryData = cur.fetchall()
 			
-	return render_template('home.html', data=itemData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
+	return render_template('home.html', data=itemData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems, categoryData=categoryData)
 
 @app.route("/add")
 def admin():
