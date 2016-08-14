@@ -20,9 +20,14 @@
 		<a class="link" href="/loginForm">Sign In</a>
 	</div>
 	{% else %}
-	<div id="displayUserId">Hello, <br>{{firstName}}</div>
-	<div id="signInButton">
-		<a class="link" href="/logout">Sign Out</a>
+	<div class="dropdown">
+		<button class="dropbtn">Hello, <br>{{firstName}}</button>
+		<div class="dropdown-content">
+			<a href="/account/orders">Your orders</a>
+			<a href="/account/profile">Your profile</a>
+			<hr>
+			<a href="/logout">Sign Out</a>
+		</div>
 	</div>
 	{% endif %}
 	<div id="kart">
