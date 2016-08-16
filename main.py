@@ -147,15 +147,15 @@ def changePassword():
                 try:
                     cur.execute("UPDATE users SET password = ? WHERE userId = ?", (newPassword, userId))
                     conn.commit()
-                    msg="Success"
+                    msg="Changed successfully"
                 except:
                     conn.rollback()
-                    msg = "Failure"
-                return msg
+                    msg = "Failed"
+                return render_template("changePassword.html", msg=msg)
             else:
                 msg = "Wrong password"
         conn.close()
-        return msg
+        return render_template("changePassword.html", msg=msg)
     else:
         return render_template("changePassword.html")
 
