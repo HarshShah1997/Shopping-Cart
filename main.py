@@ -130,6 +130,35 @@ def editProfile():
     conn.close()
     return render_template("editProfile.html", profileData=profileData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
 
+@app.route("/account/profile/changePassword", methods=["GET", "POST"])
+def changePassword():
+    if 'email' not in session:
+        return redirect(url_for('loginForm'))
+    if request.method == "POST":
+        oldPassword = request.form['oldpassword']
+        oldPassword = hashlib.md5(oldPassword.encode()).hexdigest()
+        newPassword = request.form['newpassword']
+        newPassword = hashlib.md5(newPassword.encode()).hexdigest()
+        with sqlite3.connect('database.db') as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT userId, password FROM users WHERE email = '" + session['email'] + "'")
+            userId, password = cur.fetchone()
+            if (password == oldPassword):
+                try:
+                    cur.execute("UPDATE users SET password = ? WHERE userId = ?", (newPassword, userId))
+                    conn.commit()
+                    msg="Success"
+                except:
+                    conn.rollback()
+                    msg = "Failure"
+                return msg
+            else:
+                msg = "Wrong password"
+        conn.close()
+        return msg
+    else:
+        return render_template("changePassword.html")
+
 @app.route("/updateProfile", methods=["GET", "POST"])
 def updateProfile():
     if request.method == 'POST':
