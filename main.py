@@ -17,9 +17,9 @@ def getLoginDetails():
             noOfItems = 0
         else:
             loggedIn = True
-            cur.execute("SELECT userId, firstName FROM users WHERE email = '" + session['email'] + "'")
+            cur.execute("SELECT userId, firstName FROM users WHERE email = ?", (session['email'], ))
             userId, firstName = cur.fetchone()
-            cur.execute("SELECT count(productId) FROM kart WHERE userId = " + str(userId))
+            cur.execute("SELECT count(productId) FROM kart WHERE userId = ?", (userId, ))
             noOfItems = cur.fetchone()[0]
     conn.close()
     return (loggedIn, firstName, noOfItems)
@@ -88,7 +88,7 @@ def removeItem():
     with sqlite3.connect('database.db') as conn:
         try:
             cur = conn.cursor()
-            cur.execute('DELETE FROM products WHERE productID = ' + productId)
+            cur.execute('DELETE FROM products WHERE productID = ?', (productId, ))
             conn.commit()
             msg = "Deleted successsfully"
         except:
@@ -104,7 +104,7 @@ def displayCategory():
         categoryId = request.args.get("categoryId")
         with sqlite3.connect('database.db') as conn:
             cur = conn.cursor()
-            cur.execute("SELECT products.productId, products.name, products.price, products.image, categories.name FROM products, categories WHERE products.categoryId = categories.categoryId AND categories.categoryId = " + categoryId)
+            cur.execute("SELECT products.productId, products.name, products.price, products.image, categories.name FROM products, categories WHERE products.categoryId = categories.categoryId AND categories.categoryId = ?", (categoryId, ))
             data = cur.fetchall()
         conn.close()
         categoryName = data[0][4]
@@ -125,7 +125,7 @@ def editProfile():
     loggedIn, firstName, noOfItems = getLoginDetails()
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
-        cur.execute("SELECT userId, email, firstName, lastName, address1, address2, zipcode, city, state, country, phone FROM users WHERE email = '" + session['email'] + "'")
+        cur.execute("SELECT userId, email, firstName, lastName, address1, address2, zipcode, city, state, country, phone FROM users WHERE email = ?", (session['email'], ))
         profileData = cur.fetchone()
     conn.close()
     return render_template("editProfile.html", profileData=profileData, loggedIn=loggedIn, firstName=firstName, noOfItems=noOfItems)
@@ -141,7 +141,7 @@ def changePassword():
         newPassword = hashlib.md5(newPassword.encode()).hexdigest()
         with sqlite3.connect('database.db') as conn:
             cur = conn.cursor()
-            cur.execute("SELECT userId, password FROM users WHERE email = '" + session['email'] + "'")
+            cur.execute("SELECT userId, password FROM users WHERE email = ?", (session['email'], ))
             userId, password = cur.fetchone()
             if (password == oldPassword):
                 try:
@@ -210,7 +210,7 @@ def productDescription():
     productId = request.args.get('productId')
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
-        cur.execute('SELECT productId, name, price, description, image, stock FROM products WHERE productId = ' + productId)
+        cur.execute('SELECT productId, name, price, description, image, stock FROM products WHERE productId = ?', (productId, ))
         productData = cur.fetchone()
     conn.close()
     return render_template("productDescription.html", data=productData, loggedIn = loggedIn, firstName = firstName, noOfItems = noOfItems)
@@ -223,7 +223,7 @@ def addToCart():
         productId = int(request.args.get('productId'))
         with sqlite3.connect('database.db') as conn:
             cur = conn.cursor()
-            cur.execute("SELECT userId FROM users WHERE email = '" + session['email'] + "'")
+            cur.execute("SELECT userId FROM users WHERE email = ?", (session['email'], ))
             userId = cur.fetchone()[0]
             try:
                 cur.execute("INSERT INTO kart (userId, productId) VALUES (?, ?)", (userId, productId))
@@ -243,9 +243,9 @@ def cart():
     email = session['email']
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
-        cur.execute("SELECT userId FROM users WHERE email = '" + email + "'")
+        cur.execute("SELECT userId FROM users WHERE email = ?", (email, ))
         userId = cur.fetchone()[0]
-        cur.execute("SELECT products.productId, products.name, products.price, products.image FROM products, kart WHERE products.productId = kart.productId AND kart.userId = " + str(userId))
+        cur.execute("SELECT products.productId, products.name, products.price, products.image FROM products, kart WHERE products.productId = kart.productId AND kart.userId = ?", (userId, ))
         products = cur.fetchall()
     totalPrice = 0
     for row in products:
@@ -260,10 +260,10 @@ def removeFromCart():
     productId = int(request.args.get('productId'))
     with sqlite3.connect('database.db') as conn:
         cur = conn.cursor()
-        cur.execute("SELECT userId FROM users WHERE email = '" + email + "'")
+        cur.execute("SELECT userId FROM users WHERE email = ?", (email, ))
         userId = cur.fetchone()[0]
         try:
-            cur.execute("DELETE FROM kart WHERE userId = " + str(userId) + " AND productId = " + str(productId))
+            cur.execute("DELETE FROM kart WHERE userId = ? AND productId = ?", (userId, productId))
             conn.commit()
             msg = "removed successfully"
         except:
