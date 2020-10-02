@@ -1,4 +1,4 @@
-# Shopping Cart  
+# Shopping Cart: Expierence beyond Imaginations 
 A simple E-commerce website using Flask.
   
 ## Dependencies ##
@@ -10,3 +10,4 @@ A simple E-commerce website using Flask.
 1. Set up database by running database.py
 2. Run main.py
 3. Enter localhost:5000 in the browser.
+And that is all for this.
