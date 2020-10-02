@@ -1,4 +1,5 @@
-# Shopping Cart  
+# Shopping Cart
+shopping is something which everyone loves.
 A simple E-commerce website using Flask.
   
 ## Dependencies ##
