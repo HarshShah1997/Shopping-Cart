@@ -1,4 +1,4 @@
-# Shopping Cart  
+# Shopping Hub Cart  
 A simple E-commerce website using Flask.
   
 ## Dependencies ##
