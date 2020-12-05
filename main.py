@@ -38,15 +38,58 @@ def root():
 
 @app.route("/add")
 def admin():
-    with sqlite3.connect('database.db') as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT categoryId, name FROM categories")
-        categories = cur.fetchall()
-    conn.close()
-    return render_template('add.html', categories=categories)
+    # with sqlite3.connect('database.db') as conn:
+    #     cur = conn.cursor()
+    #     cur.execute("SELECT categoryId, name FROM categories")
+    #     categories = cur.fetchall()
+    # conn.close()
+    return render_template("checktoadd.html")
+    # return redirect(url_for("checktoadd"))
+
+# added to check authority of user to add posts
+@app.route("/checktoadd", methods=["GET", "POST"])
+def checktoadd():
+    if request.method == "POST":
+        ide = request.form['ide']
+        password = request.form['password']
+    if (ide == "user@add.com" and password == "password"): #add/update username/password as per your choice
+        with sqlite3.connect('database.db') as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT categoryId, name FROM categories")
+            categories = cur.fetchall()
+        conn.close()
+        return render_template("add.html", categories=categories)
+    else:
+        error = "Invalid username/password"
+        return render_template("checktoadd.html", error=error)
+
+
+# added to check authority of user to remove posts
+@app.route("/checktoremove", methods=["GET", "POST"])
+def checktoremove():
+    if request.method == "POST":
+        ide = request.form['ide']
+        password = request.form['password']
+    if (ide == "user@gremove.com" and password == "password"): #add/update username/password as per your choice
+        with sqlite3.connect('database.db') as conn:
+            cur = conn.cursor()
+            cur.execute('SELECT productId, name, price, description, image, stock FROM products')
+            data = cur.fetchall()
+        conn.close()
+        return render_template("remove.html", data=data)
+    else:
+        error = "Invalid username/password"
+        return render_template("checktoremove.html", error=error)
+
+    
+@app.route("/checkout")
+def checkOut():
+    return "Create the checkout credentials"
+
 
 @app.route("/addItem", methods=["GET", "POST"])
 def addItem():
+    global msg
     if request.method == "POST":
         name = request.form['name']
         price = float(request.form['price'])
@@ -65,22 +108,22 @@ def addItem():
                 cur = conn.cursor()
                 cur.execute('''INSERT INTO products (name, price, description, image, stock, categoryId) VALUES (?, ?, ?, ?, ?, ?)''', (name, price, description, imagename, stock, categoryId))
                 conn.commit()
-                msg="added successfully"
+                msg = "added successfully"
             except:
-                msg="error occured"
+                msg = "error occured"
                 conn.rollback()
         conn.close()
-        print(msg)
-        return redirect(url_for('root'))
+    print(msg)
+    return redirect(url_for('root'))
 
 @app.route("/remove")
 def remove():
-    with sqlite3.connect('database.db') as conn:
-        cur = conn.cursor()
-        cur.execute('SELECT productId, name, price, description, image, stock FROM products')
-        data = cur.fetchall()
-    conn.close()
-    return render_template('remove.html', data=data)
+#     with sqlite3.connect('database.db') as conn:
+#         cur = conn.cursor()
+#         cur.execute('SELECT productId, name, price, description, image, stock FROM products')
+#         data = cur.fetchall()
+#     conn.close()
+    return render_template('checktoremove.html')
 
 @app.route("/removeItem")
 def removeItem():
@@ -191,6 +234,7 @@ def loginForm():
         return redirect(url_for('root'))
     else:
         return render_template('login.html', error='')
+
 
 @app.route("/login", methods = ['POST', 'GET'])
 def login():
