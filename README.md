@@ -1,4 +1,4 @@
-# Shopping Cart  
+# Shopping Cart website using Flask. 
 A simple E-commerce website using Flask.
   
 ## Dependencies ##
