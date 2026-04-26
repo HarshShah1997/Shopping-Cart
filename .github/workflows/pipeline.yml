@@ -51,7 +51,7 @@ jobs:
         run: pip install bandit
 
       - name: Run Bandit
-        run: bandit -r . -x tests
+        run: bandit -c .bandit -r .
 
   test:
     name: Automated Testing

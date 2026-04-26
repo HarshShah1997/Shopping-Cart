@@ -1,5 +1,9 @@
+import os
+import secrets
 from flask import *
-import sqlite3, hashlib, os
+import sqlite3
+import os
+import bcrypt
 from werkzeug.utils import secure_filename
 from flask import Flask
 from prometheus_flask_exporter import PrometheusMetrics
@@ -8,10 +12,23 @@ app = Flask(__name__)
 
 metrics = PrometheusMetrics(app)
 
-app.secret_key = 'random string'
+app.secret_key = os.getenv("SECRET_KEY", secrets.token_hex(32))
 UPLOAD_FOLDER = 'static/uploads'
 ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def hash_password(password):
+    return bcrypt.hashpw(
+        password.encode("utf-8"),
+        bcrypt.gensalt()
+    ).decode("utf-8")
+
+
+def verify_password(password, hashed_password):
+    return bcrypt.checkpw(
+        password.encode("utf-8"),
+        hashed_password.encode("utf-8")
+    )
 
 def getLoginDetails():
     with sqlite3.connect('database.db') as conn:
@@ -139,31 +156,41 @@ def editProfile():
 def changePassword():
     if 'email' not in session:
         return redirect(url_for('loginForm'))
+
     if request.method == "POST":
         oldPassword = request.form['oldpassword']
-        oldPassword = hashlib.md5(oldPassword.encode()).hexdigest()
         newPassword = request.form['newpassword']
-        newPassword = hashlib.md5(newPassword.encode()).hexdigest()
+
         with sqlite3.connect('database.db') as conn:
             cur = conn.cursor()
-            cur.execute("SELECT userId, password FROM users WHERE email = ?", (session['email'], ))
-            userId, password = cur.fetchone()
-            if (password == oldPassword):
-                try:
-                    cur.execute("UPDATE users SET password = ? WHERE userId = ?", (newPassword, userId))
-                    conn.commit()
-                    msg="Changed successfully"
-                except:
-                    conn.rollback()
-                    msg = "Failed"
-                return render_template("changePassword.html", msg=msg)
-            else:
-                msg = "Wrong password"
-        conn.close()
-        return render_template("changePassword.html", msg=msg)
-    else:
-        return render_template("changePassword.html")
 
+            cur.execute(
+                "SELECT password FROM users WHERE email = ?",
+                (session['email'],)
+            )
+
+            row = cur.fetchone()
+
+            if row and verify_password(oldPassword, row[0]):
+
+                newHashedPassword = hash_password(newPassword)
+
+                cur.execute(
+                    "UPDATE users SET password = ? WHERE email = ?",
+                    (newHashedPassword, session['email'])
+                )
+
+                conn.commit()
+                msg = "Changed successfully"
+
+            else:
+                msg = "Wrong old password"
+
+        return render_template(
+            "changePassword.html",
+            msg=msg
+        )
+    
 @app.route("/updateProfile", methods=["GET", "POST"])
 def updateProfile():
     if request.method == 'POST':
@@ -293,7 +320,7 @@ def is_valid(email, password):
     cur.execute('SELECT email, password FROM users')
     data = cur.fetchall()
     for row in data:
-        if row[0] == email and row[1] == hashlib.md5(password.encode()).hexdigest():
+        if row[0] == email and verify_password(password, row[1]):
             return True
     return False
 
@@ -316,7 +343,7 @@ def register():
         with sqlite3.connect('database.db') as con:
             try:
                 cur = con.cursor()
-                cur.execute('INSERT INTO users (password, email, firstName, lastName, address1, address2, zipcode, city, state, country, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (hashlib.md5(password.encode()).hexdigest(), email, firstName, lastName, address1, address2, zipcode, city, state, country, phone))
+                cur.execute('INSERT INTO users (password, email, firstName, lastName, address1, address2, zipcode, city, state, country, phone) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', (hash_password(password), email, firstName, lastName, address1, address2, zipcode, city, state, country, phone))
 
                 con.commit()
 
@@ -354,7 +381,7 @@ def parse(data):
 
 if __name__ == "__main__":
     app.run(
-        host="0.0.0.0",
+        host="0.0.0.0",  # nosec B104
         port=5000,
         debug=False,
         use_reloader=False
