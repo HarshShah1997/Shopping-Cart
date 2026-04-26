@@ -1,0 +1,23 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: shopping-cart
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./database.db:/app/database.db
+    restart: always
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
