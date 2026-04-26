@@ -1,4 +1,3 @@
-import os
 import secrets
 from flask import *
 import sqlite3
