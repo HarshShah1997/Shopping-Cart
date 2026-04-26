@@ -4,20 +4,45 @@ services:
   app:
     build: .
     container_name: shopping-cart
+    restart: always
     ports:
       - "5000:5000"
     volumes:
       - ./database.db:/app/database.db
-    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - shopping-net
 
   prometheus:
     image: prom/prometheus
+    container_name: prometheus
+    restart: always
     ports:
       - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - app
+    networks:
+      - shopping-net
 
   grafana:
     image: grafana/grafana
+    container_name: grafana
+    restart: always
     ports:
       - "3000:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    depends_on:
+      - prometheus
+    networks:
+      - shopping-net
+
+networks:
+  shopping-net:

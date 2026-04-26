@@ -1,68 +1,92 @@
-name: Flask Build & Test Pipeline
+name: Shopping Cart DevSecOps Pipeline
 
 on:
   push:
     branches:
-      - master
+      - main
       - dev
-      - 'feature/**'
+      - feature/**
   pull_request:
     branches:
-      - master
+      - main
       - dev
 
 env:
-  PYTHON_VERSION: "3.11"
+  IMAGE_NAME: swapnilbhiungade/shopping-cart:latest
 
 jobs:
-  build-and-test:
-    name: Build and Test
+  build-test-scan-deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1) Checkout source code
-      - name: Checkout source
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2) Setup Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: ${{ env.PYTHON_VERSION }}
+          python-version: "3.11"
 
-      # 3) Cache pip dependencies
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      # 4) Install dependencies
-      - name: Install dependencies
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install flake8 pytest pytest-cov
+          pip install pytest pytest-cov flake8 bandit
 
-      # 5) Lint check
-      - name: Run flake8
+      - name: Run Flake8 Lint
         run: |
-          flake8 . --count --statistics --show-source
+          flake8 .
 
-      # 6) Run tests with coverage
-      - name: Run pytest
+      - name: Run Bandit Security Scan
+        run: |
+          bandit -r . -x tests
+
+      - name: Run Pytest
         run: |
           pytest \
-            --cov=. \
-            --cov-report=term \
-            --cov-report=xml \
-            --cov-fail-under=50
+          --cov=. \
+          --cov-report=term \
+          --cov-report=xml \
+          --cov-fail-under=50
 
-      # 7) Upload coverage report
-      - name: Upload coverage artifact
+      - name: Upload Coverage Report
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage.xml
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker Image
+        run: |
+          docker build -t $IMAGE_NAME .
+
+      - name: Scan Docker Image using Trivy
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
+      - name: Push Docker Image
+        run: |
+          docker push $IMAGE_NAME
+
+      - name: Smoke Test Container
+        run: |
+          docker run -d --name smoke-test -p 5000:5000 $IMAGE_NAME
+          sleep 15
+          curl --fail http://localhost:5000 || exit 1
+          docker rm -f smoke-test
+
+      - name: Pipeline Completed
+        run: echo "Build + Test + Scan + Push successful"
