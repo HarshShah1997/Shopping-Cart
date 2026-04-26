@@ -58,7 +58,7 @@ jobs:
             --cov=. \
             --cov-report=term \
             --cov-report=xml \
-            --cov-fail-under=25
+            --cov-fail-under=60
 
       # 7) Upload coverage report
       - name: Upload coverage artifact

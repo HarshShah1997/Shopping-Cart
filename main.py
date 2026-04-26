@@ -184,6 +184,8 @@ def updateProfile():
                     msg = "Error occured"
         con.close()
         return redirect(url_for('editProfile'))
+        
+    return redirect(url_for('editProfile'))
 
 @app.route("/loginForm")
 def loginForm():
@@ -321,6 +323,8 @@ def register():
         return render_template("login.html", error=msg)
     
     return render_template("register.html")
+
+
 
 @app.route("/registerationForm")
 def registrationForm():
