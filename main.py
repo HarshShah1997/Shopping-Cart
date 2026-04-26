@@ -192,17 +192,20 @@ def loginForm():
     else:
         return render_template('login.html', error='')
 
-@app.route("/login", methods = ['POST', 'GET'])
+@app.route("/login", methods=['POST', 'GET'])
 def login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
+
         if is_valid(email, password):
             session['email'] = email
             return redirect(url_for('root'))
         else:
             error = 'Invalid UserId / Password'
             return render_template('login.html', error=error)
+
+    return render_template('login.html', error='')
 
 @app.route("/productDescription")
 def productDescription():
@@ -316,6 +319,8 @@ def register():
                 msg = "Error occured"
         con.close()
         return render_template("login.html", error=msg)
+    
+    return render_template("register.html")
 
 @app.route("/registerationForm")
 def registrationForm():

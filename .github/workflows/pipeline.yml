@@ -1,0 +1,68 @@
+name: Flask Build & Test Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - 'feature/**'
+  pull_request:
+    branches:
+      - main
+      - dev
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Checkout source code
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      # 2) Setup Python
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      # 3) Cache pip dependencies
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      # 4) Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install flake8 pytest pytest-cov
+
+      # 5) Lint check
+      - name: Run flake8
+        run: |
+          flake8 . --count --statistics --show-source
+
+      # 6) Run tests with coverage
+      - name: Run pytest
+        run: |
+          pytest \
+            --cov=. \
+            --cov-report=term \
+            --cov-report=xml \
+            --cov-fail-under=60
+
+      # 7) Upload coverage report
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
