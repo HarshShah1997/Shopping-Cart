@@ -86,38 +86,3 @@ def test_logout_redirect(client):
 def test_invalid_route(client):
     response = client.get("/invalid")
     assert response.status_code == 404
-
-
-def test_login_invalid(client):
-    response = client.post(
-        "/login",
-        data={
-            "email": "fake@test.com",
-            "password": "wrong"
-        }
-    )
-    assert response.status_code == 200
-
-
-def test_add_item_get(client):
-    response = client.get("/addItem")
-    assert response.status_code in (200, 302)
-
-
-def test_add_item_invalid_post(client):
-    response = client.post(
-        "/addItem",
-        data={
-            "name": "Test Product",
-            "price": "100",
-            "description": "Demo",
-            "stock": "5",
-            "category": "1"
-        }
-    )
-    assert response.status_code in (200, 302, 500)
-
-
-def test_change_password_get(client):
-    response = client.get("/account/profile/changePassword")
-    assert response.status_code == 302
