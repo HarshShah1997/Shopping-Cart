@@ -1,4 +1,3 @@
-# ---------- Builder ----------
 FROM python:3.11-slim AS builder
 
 WORKDIR /app
@@ -11,22 +10,14 @@ RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
 COPY requirements.txt .
-
-RUN pip install --no-cache-dir --upgrade pip setuptools wheel
+RUN pip install --no-cache-dir -U pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-
-# ---------- Runtime ----------
-FROM debian:13-slim
+FROM python:3.11-slim
 
 WORKDIR /app
-
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-minimal \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
 
 ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
