@@ -181,3 +181,8 @@ jobs:
 
       - name: Success
         run: echo "Pipeline completed successfully"
+
+      - name: Show Application URL
+        run: |
+          URL=$(minikube service shopping-cart-service -n shopping-cart --url)
+          echo "Application URL: $URL"
