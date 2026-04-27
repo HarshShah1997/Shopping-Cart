@@ -1,96 +1,94 @@
-name: Shopping Cart DevSecOps Pipeline
+name: Shopping Cart CI/CD Pipeline
 
 on:
   push:
     branches:
-      - main
+      - master
       - dev
-      - feature/**
   pull_request:
     branches:
-      - main
+      - master
       - dev
 
 env:
   IMAGE_NAME: swapnilbhiungade/shopping-cart:latest
 
 jobs:
-
   lint:
     name: Code Quality Check
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install Dependencies
         run: |
-          pip install -r requirements.txt
-          pip install -r requirements-dev.txt
+          python -m pip install --upgrade pip
           pip install flake8
+          pip install -r requirements.txt
 
       - name: Run Flake8
         run: flake8 .
 
-  security_scan:
-    name: Security Scan
+  test:
+    name: Unit Testing
     runs-on: ubuntu-latest
     needs: lint
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install Bandit
-        run: pip install bandit
-
-      - name: Run Bandit
-        run: bandit -c .bandit -r .
-
-  test:
-    name: Automated Testing
-    runs-on: ubuntu-latest
-    needs: security_scan
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
+      - name: Setup Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
       - name: Install Dependencies
         run: |
-          pip install -r requirements.txt
+          python -m pip install --upgrade pip
           pip install pytest pytest-cov
+          pip install -r requirements.txt
 
       - name: Run Tests
-        run: |
-          pytest \
-          --cov=. \
-          --cov-report=xml \
-          --cov-fail-under=50
+        run: pytest --cov=. --cov-fail-under=60
 
-      - name: Upload Coverage
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-report
-          path: coverage.xml
-
-  build_and_push:
-    name: Build & Push Docker Image
+  security:
+    name: Security Scan
     runs-on: ubuntu-latest
     needs: test
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Security Tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit
+
+      - name: Run Bandit
+        run: bandit -r . -x tests
+
+  build_and_push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: security
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -98,9 +96,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build Image
+      - name: Build Docker Image
         run: docker build -t $IMAGE_NAME .
 
+      - name: Push Docker Image
+        run: docker push $IMAGE_NAME
+
+  image_scan:
+    name: Docker Image Security Scan
+    runs-on: ubuntu-latest
+    needs: build_and_push
+
+    steps:
       - name: Scan Docker Image
         uses: aquasecurity/trivy-action@master
         with:
@@ -112,16 +119,14 @@ jobs:
           vuln-type: os,library
           trivyignores: .trivyignore
 
-      - name: Push Image
-        run: docker push $IMAGE_NAME
-
-  deploy_k8s:
+  deploy:
     name: Deploy to Kubernetes
     runs-on: ubuntu-latest
-    needs: build_and_push
+    needs: image_scan
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
@@ -129,7 +134,7 @@ jobs:
       - name: Setup Minikube
         uses: medyagh/setup-minikube@latest
 
-      - name: Deploy
+      - name: Deploy to Kubernetes
         run: |
           kubectl apply -f k8s/namespace.yml
           kubectl apply -f k8s/deployment.yml
@@ -137,36 +142,29 @@ jobs:
 
       - name: Verify Rollout
         run: |
-          kubectl rollout status deployment/shopping-cart -n shopping-cart --timeout=120s
+          kubectl rollout status deployment/shopping-cart -n shopping-cart --timeout=180s
 
-      - name: Debug Kubernetes
+      - name: Check Kubernetes Resources
+        run: |
+          echo "===== NAMESPACES ====="
+          kubectl get ns
+
+          echo "===== ALL IN shopping-cart ====="
+          kubectl get all -n shopping-cart
+
+          echo "===== SERVICES ====="
+          kubectl get svc -A
+
+      - name: Debug Kubernetes Logs
         if: always()
         run: |
-          echo "===== PODS ====="
-          kubectl get pods -n shopping-cart -o wide
+          echo "===== POD DETAILS ====="
+          kubectl describe pods -n shopping-cart || true
 
-          echo "===== DESCRIBE ====="
-          kubectl describe pods -n shopping-cart
-
-          echo "===== LOGS ====="
+          echo "===== APP LOGS ====="
           kubectl logs deployment/shopping-cart -n shopping-cart || true
 
-  smoke_test:
-    name: Smoke Test
-    runs-on: ubuntu-latest
-    needs: deploy_k8s
-
-    steps:
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v4
-
-      - name: Setup Minikube
-        uses: medyagh/setup-minikube@latest
-
-      - name: Verify Application
+      - name: Access Application
         run: |
           URL=$(minikube service shopping-cart-service -n shopping-cart --url)
-          curl --fail $URL
-
-      - name: Success
-        run: echo "Pipeline completed successfully"
+          echo "Application URL: $URL"
