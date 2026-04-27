@@ -152,21 +152,32 @@ jobs:
           kubectl logs deployment/shopping-cart -n shopping-cart || true
 
   smoke_test:
-    name: Smoke Test
-    runs-on: ubuntu-latest
-    needs: deploy_k8s
+  name: Smoke Test
+  runs-on: ubuntu-latest
+  needs: deploy_k8s
 
-    steps:
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v4
+  steps:
+    - uses: actions/checkout@v4
 
-      - name: Setup Minikube
-        uses: medyagh/setup-minikube@latest
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v4
 
-      - name: Verify Application
-        run: |
-          URL=$(minikube service shopping-cart-service -n shopping-cart --url)
-          curl --fail $URL
+    - name: Setup Minikube
+      uses: medyagh/setup-minikube@latest
 
-      - name: Success
-        run: echo "Pipeline completed successfully"
+    - name: Redeploy for Smoke Test
+      run: |
+        kubectl apply -f k8s/namespace.yml
+        kubectl apply -f k8s/deployment.yml
+        kubectl apply -f k8s/service.yml
+        kubectl rollout status deployment/shopping-cart -n shopping-cart --timeout=120s
+
+    - name: Verify Application
+      run: |
+        minikube service list
+        URL=$(minikube service shopping-cart-service -n shopping-cart --url)
+        echo "Application URL: $URL"
+        curl --fail "$URL"
+
+    - name: Success
+      run: echo "Pipeline completed successfully"
