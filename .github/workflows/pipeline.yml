@@ -109,6 +109,8 @@ jobs:
           exit-code: 1
           ignore-unfixed: true
           severity: HIGH,CRITICAL
+          vuln-type: os,library
+          ignore-policy: .trivyignore
 
       - name: Push Image
         run: docker push $IMAGE_NAME
