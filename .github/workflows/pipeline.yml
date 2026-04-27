@@ -135,7 +135,19 @@ jobs:
 
       - name: Verify Rollout
         run: |
-          kubectl rollout status deployment/shopping-cart -n shopping-cart
+          kubectl rollout status deployment/shopping-cart -n shopping-cart --timeout=120s
+
+      - name: Debug Kubernetes
+        if: always()
+        run: |
+          echo "===== PODS ====="
+          kubectl get pods -n shopping-cart -o wide
+
+          echo "===== DESCRIBE ====="
+          kubectl describe pods -n shopping-cart
+
+          echo "===== LOGS ====="
+          kubectl logs deployment/shopping-cart -n shopping-cart || true
 
   smoke_test:
     name: Smoke Test
