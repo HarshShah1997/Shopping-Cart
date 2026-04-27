@@ -3,33 +3,37 @@ FROM python:3.11-slim AS builder
 
 WORKDIR /app
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
-
 RUN python -m venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-RUN pip install --upgrade pip
+COPY requirements.txt .
+
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
 
 
 # ---------- Runtime ----------
-FROM python:3.11-slim
+FROM debian:13-slim
 
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-minimal \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PATH="/opt/venv/bin:$PATH"
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
-ENV PATH="/opt/venv/bin:$PATH"
 
 COPY --from=builder /opt/venv /opt/venv
-COPY . .
+COPY --from=builder /app /app
 
 EXPOSE 5000
 
