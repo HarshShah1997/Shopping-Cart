@@ -79,7 +79,8 @@ jobs:
           pip install bandit
 
       - name: Run Bandit
-        run: bandit -r . -x tests
+        run: |
+          bandit -r . -x ./tests,./venv,__pycache__
 
   build_and_push:
     name: Build & Push Docker Image
