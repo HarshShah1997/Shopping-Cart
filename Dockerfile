@@ -11,10 +11,8 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 COPY requirements.txt .
 
-RUN pip install --no-cache-dir -U pip
+RUN pip install --no-cache-dir --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
-
-RUN pip uninstall -y pip setuptools wheel
 
 COPY . .
 
@@ -29,8 +27,6 @@ ENV PYTHONUNBUFFERED=1
 COPY --from=builder /opt/venv /opt/venv
 COPY --from=builder /app /app
 
-RUN python -m pip uninstall -y pip setuptools wheel || true
-
 EXPOSE 5000
 
-CMD ["gunicorn", "-b", "0.0.0.0:5000", "main:app"]
+CMD ["/opt/venv/bin/gunicorn", "-b", "0.0.0.0:5000", "main:app"]

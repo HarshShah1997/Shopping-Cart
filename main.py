@@ -12,9 +12,11 @@ app = Flask(__name__)
 metrics = PrometheusMetrics(app)
 
 app.secret_key = os.getenv("SECRET_KEY", secrets.token_hex(32))
-UPLOAD_FOLDER = 'static/uploads'
+UPLOAD_FOLDER = "static/uploads"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
 ALLOWED_EXTENSIONS = set(['jpeg', 'jpg', 'png', 'gif'])
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 def hash_password(password):
     return bcrypt.hashpw(
@@ -65,6 +67,10 @@ def admin():
         categories = cur.fetchall()
     conn.close()
     return render_template('add.html', categories=categories)
+
+@app.route("/health")
+def health():
+    return {"status": "healthy"}, 200
 
 @app.route("/addItem", methods=["GET", "POST"])
 def addItem():
@@ -314,14 +320,15 @@ def logout():
     return redirect(url_for('root'))
 
 def is_valid(email, password):
-    con = sqlite3.connect('database.db')
-    cur = con.cursor()
-    cur.execute('SELECT email, password FROM users')
-    data = cur.fetchall()
-    for row in data:
-        if row[0] == email and verify_password(password, row[1]):
-            return True
-    return False
+    with sqlite3.connect("database.db") as con:
+        cur = con.cursor()
+        cur.execute(
+            "SELECT password FROM users WHERE email = ?",
+            (email,)
+        )
+        row = cur.fetchone()
+
+    return bool(row and verify_password(password, row[0]))
 
 @app.route("/register", methods = ['GET', 'POST'])
 def register():
