@@ -187,3 +187,23 @@
           run: |
             URL=$(minikube service shopping-cart-service -n shopping-cart --url)
             echo "Application URL: $URL"
+
+    deploy_render:
+      name: Deploy to Render
+      runs-on: ubuntu-latest
+      needs: smoke_test
+
+      steps:
+        - name: Trigger Render Deployment
+          run: |
+            curl -X POST "${{ secrets.RENDER_DEPLOY_HOOK }}"
+
+        - name: Wait for Render Deploy
+          run: sleep 45
+
+        - name: Show Live URL
+          run: |
+            echo "======================================"
+            echo "Application is LIVE 🚀"
+            echo "URL: https://shopping-cart.onrender.com"
+            echo "======================================"
